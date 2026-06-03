@@ -1,0 +1,57 @@
+name: Release
+
+# Manually cut a release: validate the version, create and push the tag, and
+# publish a GitHub Release. asdf installs the plugin from the default branch, so
+# tags are for human-facing versioning and release notes, not for plugin
+# resolution. Run from the Actions tab or with `gh workflow run release.yml -f
+# version=X.Y.Z`.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version MAJOR.MINOR.PATCH (the leading v is optional)"
+        required: true
+        type: string
+
+# Needed to push the tag and create the release.
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history so generated release notes are complete
+
+      - name: Create tag
+        id: tag
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          v="${VERSION#v}"
+          if [[ ! "$v" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::version must be MAJOR.MINOR.PATCH (got '${VERSION}')"
+            exit 1
+          fi
+          tag="v${v}"
+          if git ls-remote --exit-code --tags origin "refs/tags/${tag}" >/dev/null 2>&1; then
+            echo "::error::tag ${tag} already exists"
+            exit 1
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "${tag}" -m "Release ${tag}"
+          git push origin "refs/tags/${tag}"
+          echo "tag=${tag}" >>"$GITHUB_OUTPUT"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: gh release create "$TAG" --title "$TAG" --generate-notes
