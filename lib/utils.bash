@@ -24,19 +24,29 @@ fail() {
   exit 1
 }
 
+# Resolve the GitHub API token from two candidate values, preferring the first.
+# GITHUB_API_TOKEN takes precedence; GITHUB_TOKEN (commonly provided by CI and
+# local tooling) is honoured as a fallback. Pure: reads only its arguments and
+# prints the effective token, which may be empty.
+resolve_github_token() {
+  printf '%s' "${1:-${2:-}}"
+}
+
 # curl against the GitHub REST API.
 #
-# GITHUB_API_TOKEN is used only when set, purely to raise the anonymous rate
-# limit; it is never required for public use. The token is attached here and
-# only here. Release-asset downloads (download_file) deliberately omit it: the
-# assets are public and GitHub redirects them to a separate CDN host, where a
-# forwarded Authorization header would both be useless and risk leaking the
-# token to a third party.
+# A token is used only when available, purely to raise the anonymous rate limit;
+# it is never required for public use. The token is attached here and only here.
+# Release-asset downloads (download_file) deliberately omit it: the assets are
+# public and GitHub redirects them to a separate CDN host, where a forwarded
+# Authorization header would both be useless and risk leaking the token to a
+# third party.
 gh_api_curl() {
-  if [ -n "${GITHUB_API_TOKEN:-}" ]; then
+  local token
+  token=$(resolve_github_token "${GITHUB_API_TOKEN:-}" "${GITHUB_TOKEN:-}")
+  if [ -n "$token" ]; then
     curl --fail --silent --show-error --location --retry 3 --retry-delay 1 \
       -H "Accept: application/vnd.github+json" \
-      -H "Authorization: token ${GITHUB_API_TOKEN}" "$@"
+      -H "Authorization: token ${token}" "$@"
   else
     curl --fail --silent --show-error --location --retry 3 --retry-delay 1 \
       -H "Accept: application/vnd.github+json" "$@"
