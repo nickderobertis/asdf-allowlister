@@ -13,7 +13,14 @@ their tests and tooling.
   functions the caller invokes explicitly.
 - `test/` — Bats unit tests plus `test_helper.bash`.
 - `justfile` — the task runner and quality gate.
-- `.github/workflows/ci.yml` — Linux + macOS CI.
+- `.github/workflows/` — `ci.yml` (Linux + macOS quality and integration),
+  `commitlint.yml` (Conventional Commit enforcement on PRs), `release.yml`
+  (automated releases on push to `main`).
+
+The plugin runtime is pure shell. The only Node in this repository is dev-only
+tooling for release automation and commit linting (`package.json`, the lockfile,
+`.releaserc.json`, `.commitlintrc.json`); it is never required to use the plugin
+and the package is private (never published to npm).
 
 ## asdf plugin script contract
 
@@ -105,6 +112,21 @@ with a mapping test, and changes to release parsing must update the fixtures.
 Commit deliberately and only when asked. `asdf plugin test` runs against
 committed state, so commit before relying on it. Never commit secrets, tokens,
 or large generated artifacts.
+
+## Commits and releases
+
+- Commit messages follow [Conventional Commits](https://www.conventionalcommits.org).
+  commitlint enforces this — locally via the commit-msg hook and as a required
+  PR check — so the type prefix (`feat`, `fix`, `docs`, `ci`, …) is not optional.
+- Releases are automated: on push to `main`, semantic-release derives the next
+  version from the commit types since the last release, creates the tag, and
+  publishes a GitHub Release. `feat` yields a minor bump, `fix`/`perf` a patch,
+  and a `BREAKING CHANGE:` footer a major; other types release nothing. Choose
+  the commit type accordingly — it is the release control.
+- Do not hand-create version tags or releases, and do not add an npm-publish
+  step: tags are human-facing versioning only (asdf installs from the default
+  branch). A changelog is intentionally not committed back, to avoid a bot push
+  against the protected branch.
 
 ## Documentation and comments
 

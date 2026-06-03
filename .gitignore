@@ -1,3 +1,7 @@
+# Node dev tooling (release automation and commit linting); installed on demand.
+node_modules/
+.npm/
+
 # Local environment overrides (never commit secrets such as GITHUB_API_TOKEN).
 .env
 

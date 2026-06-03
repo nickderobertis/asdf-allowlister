@@ -102,9 +102,44 @@ Gate recipes are quiet on success and print only actionable detail on failure
 logs, dependency trees, or banners on success. Inspection recipes (`just deps`,
 `just debug-*`) may print freely; they are not part of the gate.
 
+## Commit messages
+
+Commits follow [Conventional Commits](https://www.conventionalcommits.org):
+`type(optional scope): summary`, for example `fix: handle empty release list`.
+Allowed types are `build`, `chore`, `ci`, `docs`, `feat`, `fix`, `perf`,
+`refactor`, `revert`, `style`, `test`. Keep the summary lower-case with no
+trailing period.
+
+commitlint enforces this in two places: the optional local commit-msg hook
+(enabled by `pre-commit install`) and a required `commitlint` check on every PR.
+Validate a branch's messages locally with:
+
+```sh
+just commitlint
+```
+
+## Releases (automated)
+
+Releases are cut by [semantic-release](https://semantic-release.gitbook.io) when
+commits land on `main`. It reads the commit types since the last release and
+decides the bump:
+
+- `feat:` → minor (e.g. 0.1.0 → 0.2.0)
+- `fix:` / `perf:` → patch (e.g. 0.1.0 → 0.1.1)
+- a `BREAKING CHANGE:` footer (or `type!:`) → major
+- other types (`docs`, `ci`, `chore`, `refactor`, `test`, `style`, `build`) →
+  no release
+
+So **the commit type is the release control** — there is no manual version
+bump, tag, or release step. Preview what would be released with
+`GITHUB_TOKEN=$(gh auth token) just debug-release`. Tags are human-facing
+versioning only; asdf installs the plugin from the default branch.
+
 ## Pull request checklist
 
 - [ ] `just check` passes locally.
+- [ ] Commits follow Conventional Commits (`just commitlint`), with the type
+      chosen to produce the intended release bump.
 - [ ] New or changed behaviour has tests (platform mapping, parsing, URLs,
       selection, install, failure paths).
 - [ ] Scripts stay portable (no `sort -V`, no GNU-only flags, Bash 3.2 safe).

@@ -1,9 +1,12 @@
 # Optional pre-commit hooks. They are not part of `just check`. To enable them,
 # install the pre-commit framework (https://pre-commit.com) and run
-# `pre-commit install`. The shell hooks reuse the just recipes, so they apply
-# the same file lists and rules as CI and require the asdf-managed dev tools on
-# PATH. Every hook either rewrites files (and fails) or fails outright; none are
-# warning-only.
+# `pre-commit install` (which honours default_install_hook_types below, so the
+# commit-msg hook is wired up too). The local hooks reuse the just recipes and
+# the project's pinned commitlint, so they apply the same rules as CI and require
+# the asdf-managed dev tools and `npm ci` to have run. Every hook either rewrites
+# files (and fails) or fails outright; none are warning-only.
+default_install_hook_types: [pre-commit, commit-msg]
+
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
@@ -33,3 +36,10 @@ repos:
         language: system
         pass_filenames: false
         files: ^\.github/workflows/
+      # Enforce Conventional Commits locally. pre-commit appends the commit
+      # message file path, which commitlint reads via --edit.
+      - id: commitlint
+        name: commitlint
+        entry: npx --no-install commitlint --edit
+        language: system
+        stages: [commit-msg]

@@ -1,0 +1,26 @@
+name: Commitlint
+
+# Enforce Conventional Commits on every pull request. semantic-release derives
+# the next version from these commit messages, so they must be well formed.
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  commitlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0 # need the full PR commit range to lint
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .tool-versions
+      - run: npm ci
+      - name: Lint commit messages in the PR range
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: npx --no-install commitlint --from "$BASE_SHA" --to "$HEAD_SHA" --verbose
