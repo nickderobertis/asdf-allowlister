@@ -1,5 +1,7 @@
 # asdf-allowlister
 
+[![CI](https://github.com/nickderobertis/asdf-allowlister/actions/workflows/ci.yml/badge.svg)](https://github.com/nickderobertis/asdf-allowlister/actions/workflows/ci.yml)
+
 An [asdf](https://asdf-vm.com) plugin for [**allowlister**](https://github.com/nickderobertis/allowlister) —
 a structural allow/deny/defer engine for AI coding-agent shell commands.
 
