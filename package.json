@@ -1,0 +1,20 @@
+{
+  "name": "asdf-allowlister",
+  "version": "0.0.0-managed-by-semantic-release",
+  "private": true,
+  "description": "Release automation and commit linting for the asdf-allowlister plugin. This package is dev-only tooling and is never published; the plugin itself is pure shell.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nickderobertis/asdf-allowlister.git"
+  },
+  "scripts": {
+    "commitlint": "commitlint",
+    "release": "semantic-release"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.6.0",
+    "@commitlint/config-conventional": "^19.6.0",
+    "semantic-release": "^24.2.0"
+  }
+}

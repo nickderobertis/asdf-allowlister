@@ -27,7 +27,8 @@ test_command := "allowlister --version"
 default:
     just --list
 
-# Install the dev tools pinned in .tool-versions (adds missing asdf plugins first).
+# Install the dev tools pinned in .tool-versions (adds missing asdf plugins
+# first), then the Node dev dependencies used for releases and commit linting.
 bootstrap:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -38,6 +39,7 @@ bootstrap:
       printf '%s\n' "$installed" | grep -qx "$tool" || asdf plugin add "$tool"
     done <.tool-versions
     asdf install
+    npm ci
 
 # Format shell scripts in place (style comes from .editorconfig).
 format:
@@ -58,6 +60,10 @@ lint-fix:
 # Lint GitHub Actions workflows.
 actionlint:
     actionlint
+
+# Lint Conventional Commit messages on this branch (commits not yet on main).
+commitlint:
+    npx --no-install commitlint --from main --to HEAD
 
 # Run the unit suite; quiet on success, full TAP on failure.
 test:
@@ -92,3 +98,8 @@ debug-platform:
 # Inspection: installable versions as asdf sees them (hits the network).
 debug-versions:
     bin/list-all
+
+# Inspection: what semantic-release would release (creates nothing). Needs a
+# token, e.g. `GITHUB_TOKEN=$(gh auth token) just debug-release`.
+debug-release:
+    npx --no-install semantic-release --dry-run --no-ci

@@ -103,15 +103,20 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the full workflow. In short:
    just bootstrap
    ```
 
-   `just bootstrap` runs `asdf install` after adding any missing plugins. If you
-   prefer to do it by hand, `asdf plugin add` each tool in `.tool-versions`, then
-   run `asdf install`.
+   `just bootstrap` runs `asdf install` (which includes Node, used by the
+   release and commit-lint tooling) and then `npm ci`. If you prefer to do it by
+   hand, `asdf plugin add` each tool in `.tool-versions`, run `asdf install`,
+   then `npm ci`.
 3. Optionally `direnv allow` to auto-load a local `.env` (see `.envrc`).
 4. Run the full quality gate:
 
    ```sh
    just check
    ```
+
+Commit messages follow [Conventional Commits](https://www.conventionalcommits.org)
+(enforced by commitlint), and releases are cut automatically by semantic-release
+when commits land on `main`. See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 ### Daily development
 
