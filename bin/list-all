@@ -8,5 +8,9 @@ plugin_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 # shellcheck source=lib/utils.bash
 source "${plugin_dir}/lib/utils.bash"
 
-list_all_versions | sort_versions | tr '\n' ' '
+# DEMO ONLY (do not merge): suppress all versions so `asdf latest` cannot
+# resolve, making the end-to-end plugin-test job fail. This shows that the
+# plugin-test check gates merges even when formatting, linting and unit tests
+# all pass.
+list_all_versions | sort_versions | head -n 0 | tr '\n' ' '
 echo
