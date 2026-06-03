@@ -69,9 +69,10 @@ rate limit, export a token to raise it:
 export GITHUB_API_TOKEN=<your token>   # any token with public read access
 ```
 
-The token is never required for normal use, and it is never sent when
-downloading release binaries (only when listing versions). See
-[`.env.example`](.env.example).
+`GITHUB_TOKEN` is honoured as a fallback (handy in CI, where it is provided
+automatically), with `GITHUB_API_TOKEN` taking precedence. A token is never
+required for normal use, and it is never sent when downloading release binaries
+(only when listing versions). See [`.env.example`](.env.example).
 
 ## Troubleshooting
 
