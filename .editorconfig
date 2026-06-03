@@ -1,0 +1,32 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+# Shell scripts and the shared library. shfmt reads these keys directly, so the
+# formatting style lives here rather than as flags in the justfile or CI.
+# Path globs and extension globs are kept in separate sections: combining a
+# path glob (bin/*) with extension globs in one brace expression causes some
+# EditorConfig implementations to drop the extension matches.
+[bin/*]
+indent_style = space
+indent_size = 2
+switch_case_indent = true
+
+[*.{bash,sh,bats}]
+indent_style = space
+indent_size = 2
+switch_case_indent = true
+
+[justfile]
+indent_style = space
+indent_size = 4
+
+# Trailing whitespace can be significant in Markdown line breaks.
+[*.md]
+trim_trailing_whitespace = false

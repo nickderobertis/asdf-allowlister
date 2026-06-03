@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+#
+# Download and verify the requested release, leaving its decompressed contents
+# in ASDF_DOWNLOAD_PATH. Per the asdf contract, on failure no files are left in
+# ASDF_DOWNLOAD_PATH: all work happens in a temporary directory and extraction
+# into ASDF_DOWNLOAD_PATH is the final step, rolled back if it fails.
+set -euo pipefail
+
+plugin_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+# shellcheck source=lib/utils.bash
+source "${plugin_dir}/lib/utils.bash"
+
+install_type=${ASDF_INSTALL_TYPE:?ASDF_INSTALL_TYPE is not set}
+version=${ASDF_INSTALL_VERSION:?ASDF_INSTALL_VERSION is not set}
+download_path=${ASDF_DOWNLOAD_PATH:?ASDF_DOWNLOAD_PATH is not set}
+
+# Only tagged releases carry prebuilt binaries; building from an arbitrary ref
+# is unsupported.
+[ "$install_type" = "version" ] ||
+  fail "only 'version' installs are supported, got install type '$install_type'"
+
+triple=$(get_target_triple)
+stem=$(asset_stem "$version" "$triple")
+tarball="${stem}.tar.gz"
+checksum="${stem}.sha256"
+
+tmp_dir=$(mktemp -d "${TMPDIR:-/tmp}/asdf-allowlister.XXXXXX")
+# Always remove the scratch directory; on any error also clear a partially
+# written download directory so it never looks like a complete install.
+cleanup() {
+  local status=$?
+  rm -rf "$tmp_dir"
+  [ "$status" -eq 0 ] || rm -rf "$download_path"
+  exit "$status"
+}
+trap cleanup EXIT
+
+download_file "$(release_download_url "$version" "$tarball")" "${tmp_dir}/${tarball}" ||
+  fail "could not download $tarball (is $version a published release for $triple?)"
+download_file "$(release_download_url "$version" "$checksum")" "${tmp_dir}/${checksum}" ||
+  fail "could not download checksum $checksum for $version"
+
+verify_checksum "$tmp_dir" "$checksum" ||
+  fail "checksum verification failed for $tarball"
+
+tar -xzf "${tmp_dir}/${tarball}" -C "$tmp_dir" ||
+  fail "could not extract $tarball"
+[ -f "${tmp_dir}/${TOOL_NAME}" ] ||
+  fail "release archive did not contain the '$TOOL_NAME' executable"
+
+mkdir -p "$download_path"
+# Move only the runtime executable into the download dir; metadata files in the
+# archive are not needed downstream.
+mv "${tmp_dir}/${TOOL_NAME}" "${download_path}/${TOOL_NAME}"

@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+#
+# Relevant links, one "<title>: <url>" per line.
+set -euo pipefail
+
+cat <<'EOF'
+Upstream project: https://github.com/nickderobertis/allowlister
+Releases: https://github.com/nickderobertis/allowlister/releases
+Plugin repository: https://github.com/nickderobertis/asdf-allowlister
+Issues: https://github.com/nickderobertis/asdf-allowlister/issues
+EOF

@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+# Least privilege: the workflow only reads the repository.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Formatting, linting and the offline unit suite. Run on both OSes because the
+  # unit tests exercise platform-specific branches (for example the shasum
+  # fallback used where sha256sum is absent).
+  quality:
+    name: quality (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pinned dev tools
+        uses: asdf-vm/actions/install@v4
+      - name: Check formatting
+        run: just format-check
+      - name: Lint shell scripts
+        run: just lint
+      - name: Lint workflows
+        run: just actionlint
+      - name: Run unit tests
+        run: just test
+
+  # Real end-to-end install on each OS: list versions, install latest, run the
+  # tool. This is the cross-platform validation that matters most.
+  plugin-test:
+    name: plugin-test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - name: asdf plugin test
+        uses: asdf-vm/actions/plugin-test@v4
+        with:
+          command: allowlister --version
+        # Optional: raises the GitHub API rate limit when listing versions. The
+        # plugin works without it; forks receive a read-only token automatically.
+        env:
+          GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}

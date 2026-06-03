@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+#
+# Install the requested version into ASDF_INSTALL_PATH. The executable comes
+# from ASDF_DOWNLOAD_PATH, which bin/download has already populated and
+# checksum-verified. Nothing is written outside ASDF_INSTALL_PATH, and a failed
+# install removes its own directory so a broken version is never left behind.
+set -euo pipefail
+
+plugin_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+# shellcheck source=lib/utils.bash
+source "${plugin_dir}/lib/utils.bash"
+
+install_type=${ASDF_INSTALL_TYPE:?ASDF_INSTALL_TYPE is not set}
+version=${ASDF_INSTALL_VERSION:?ASDF_INSTALL_VERSION is not set}
+install_path=${ASDF_INSTALL_PATH:?ASDF_INSTALL_PATH is not set}
+download_path=${ASDF_DOWNLOAD_PATH:?ASDF_DOWNLOAD_PATH is not set}
+
+[ "$install_type" = "version" ] ||
+  fail "only 'version' installs are supported, got install type '$install_type'"
+
+source_bin="${download_path}/${TOOL_NAME}"
+[ -f "$source_bin" ] ||
+  fail "expected '$TOOL_NAME' in the download directory; run the download step first"
+
+# Remove a partial install directory if verification fails.
+cleanup() {
+  local status=$?
+  [ "$status" -eq 0 ] || rm -rf "$install_path"
+  exit "$status"
+}
+trap cleanup EXIT
+
+bin_dir="${install_path}/bin"
+mkdir -p "$bin_dir"
+install_bin="${bin_dir}/${TOOL_NAME}"
+cp "$source_bin" "$install_bin"
+chmod +x "$install_bin"
+
+# Smoke-test the installed executable so a corrupt or wrong-arch binary fails
+# the install rather than the user's first run.
+"$install_bin" --version >/dev/null 2>&1 ||
+  fail "installed $TOOL_NAME $version but '$TOOL_NAME --version' did not run"

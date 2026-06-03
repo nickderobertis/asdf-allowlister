@@ -1,0 +1,13 @@
+# Local environment overrides (never commit secrets such as GITHUB_API_TOKEN).
+.env
+
+# Formatter / patch backups.
+*.orig
+
+# Editor and OS cruft.
+*.swp
+.DS_Store
+
+# Scratch directories some workflows create at the repo root.
+/tmp/
+/.test-scratch/

@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+#
+# Runtime dependencies of the plugin scripts, one per line. These are the tools
+# the plugin shells out to; allowlister itself is a self-contained binary.
+set -euo pipefail
+
+cat <<'EOF'
+bash
+curl
+tar
+jq
+sha256sum (or shasum on macOS)
+EOF

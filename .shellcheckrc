@@ -1,0 +1,9 @@
+# ShellCheck configuration.
+#
+# Follow `source` directives so the shared library in lib/ is analysed together
+# with each script that sources it. The `# shellcheck source=lib/utils.bash`
+# directives in bin/ are written relative to the repository root, which is one
+# level above each script's directory.
+external-sources=true
+source-path=SCRIPTDIR
+source-path=SCRIPTDIR/..

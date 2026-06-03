@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+#
+# Print exactly one latest stable version.
+#
+# asdf passes an optional filter query as $1 (e.g. "0" or "0.1") to constrain
+# the result to a major or major.minor series. Pre-releases never reach this
+# flow because list_all_versions already excludes them. Exit nonzero with a
+# concise message when nothing matches.
+set -euo pipefail
+
+plugin_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+# shellcheck source=lib/utils.bash
+source "${plugin_dir}/lib/utils.bash"
+
+query=${1:-}
+
+# latest_matching reads an ascending list and uses shell pattern matching, so
+# "no match" is an ordinary empty result rather than a nonzero exit that would
+# abort the script under `set -e` before the error message is shown.
+latest=$(list_all_versions | sort_versions | latest_matching "$query")
+
+[ -n "$latest" ] || fail "no stable version found${query:+ matching \"$query\"}"
+printf '%s\n' "$latest"

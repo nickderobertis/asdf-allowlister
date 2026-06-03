@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+#
+# Short, free-form description shown by `asdf help allowlister`. asdf prints its
+# own heading, so none is emitted here.
+set -euo pipefail
+
+cat <<'EOF'
+allowlister is a structural allow/deny/defer engine for AI coding-agent shell
+commands. It parses bash into role-tagged fragments and gates each one with
+glob, regex and argv rules, and can run as a Claude Code hook. This plugin
+installs the prebuilt release binaries published for Linux and macOS.
+EOF

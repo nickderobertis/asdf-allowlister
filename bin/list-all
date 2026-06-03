@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+#
+# Print every installable version as a single space-separated line, oldest
+# first and newest last, as required by the asdf list-all contract.
+set -euo pipefail
+
+plugin_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+# shellcheck source=lib/utils.bash
+source "${plugin_dir}/lib/utils.bash"
+
+list_all_versions | sort_versions | tr '\n' ' '
+echo
