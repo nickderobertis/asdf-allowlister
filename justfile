@@ -41,6 +41,26 @@ bootstrap:
     asdf install
     npm ci
 
+# Upgrade the pinned dev toolchain to the latest stable of each tool, then
+# refresh the Node dev dependencies. Bumps every asdf plugin in .tool-versions
+# to `asdf latest`, rewrites the pin, installs it, and updates package-lock.json.
+# Review and commit the resulting .tool-versions / package-lock.json diff; this
+# recipe changes only those pins and never pushes.
+upgrade:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    command -v asdf >/dev/null || { echo "asdf is required: https://asdf-vm.com" >&2; exit 1; }
+    installed="$(asdf plugin list)"
+    while read -r tool _rest; do
+      [ -n "$tool" ] || continue
+      printf '%s\n' "$installed" | grep -qx "$tool" || asdf plugin add "$tool"
+      latest="$(asdf latest "$tool")"
+      asdf install "$tool" "$latest"
+      asdf local "$tool" "$latest"
+    done <.tool-versions
+    npm update --save
+    npm install
+
 # Format shell scripts in place (style comes from .editorconfig).
 format:
     shfmt --write {{ fmt_files }}
@@ -80,8 +100,14 @@ plugin-test:
     fi
     out="$(asdf plugin test {{ plugin }} "$PWD" "{{ test_command }}" 2>&1)" || { printf '%s\n' "$out" >&2; exit 1; }
 
-# Full quality gate.
-check: format-check lint actionlint test plugin-test
+# End-to-end test: drive the plugin through asdf exactly as a user would
+# (`asdf plugin add` + the plugin's bats harness via `asdf plugin test`),
+# installing a real version and smoke-testing the installed binary. This is the
+# repo's e2e tier; it runs inside `check`. See AGENTS.md ("Testing").
+test-e2e: plugin-test
+
+# Full quality gate: format, lint, workflows, unit tests, then the e2e tier.
+check: format-check lint actionlint test test-e2e
 
 # Remove transient formatter backup files.
 clean:
