@@ -14,6 +14,32 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # The full quality gate, run the same way a clean machine would: bootstrap the
+  # pinned toolchain, then `just check` (format-check, lint, actionlint, unit
+  # tests, and the asdf plugin e2e). This is the merge-blocking gate; matrix
+  # contexts are `check (ubuntu-latest)` and `check (macos-latest)`. The `quality`
+  # and `plugin-test` jobs below remain as named, faster-feedback splits that are
+  # also required by branch protection.
+  check:
+    name: check (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    env:
+      # Optional: raises the GitHub API rate limit when the plugin e2e lists
+      # versions. The plugin works without it; forks get a read-only token.
+      GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install asdf and pinned dev tools
+        uses: asdf-vm/actions/install@v4
+      - name: Bootstrap the toolchain
+        run: just bootstrap
+      - name: Run the full gate
+        run: just check
+
   # Formatting, linting and the offline unit suite. Run on both OSes because the
   # unit tests exercise platform-specific branches (for example the shasum
   # fallback used where sha256sum is absent).

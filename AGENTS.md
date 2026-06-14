@@ -5,6 +5,37 @@ This repository is an [asdf](https://asdf-vm.com) plugin that installs the
 application source code: it is a set of shell scripts that asdf invokes, plus
 their tests and tooling.
 
+## Stack and composition
+
+This repo was composed from the create-repo skill's reference pieces:
+
+- **Product shape — `shapes/asdf-plugin.md`.** The deliverable is the `bin/`
+  script contract (`list-all`, `download`, `install`, `latest-stable`, `help.*`)
+  that asdf invokes to list, download, and install `allowlister` release
+  binaries. The version/stable/download policy, install-path safety, explicit
+  platform mapping, and `asdf plugin test` integration all come from this shape.
+- **Language — `languages/bash.md`.** The runtime is pure Bash held to the
+  Bash 3.2 feature set for macOS portability, with `shellcheck` + `shfmt` as the
+  enforced lint/format gates and `bats` for unit tests. The shape and the
+  language agree that the host-tool integration (`asdf plugin test`) is the e2e
+  tier; see "Testing" for the e2e and coverage decisions.
+- **Cross-cutting — `ci.md` (always).** CI runs `just bootstrap` then `just
+  check` on a `ubuntu-latest` + `macos-latest` matrix and proves the real
+  end-user install path with `asdf-vm/actions/plugin-test`. The branch-protection
+  and squash-merge model from `ci.md` is recorded under "Commits and releases".
+
+Excluded, with reason:
+
+- **`shapes/cli.md`** — the installed `allowlister` binary is a CLI, but it is
+  *upstream's* product, not this repo's. This repo ships the asdf plugin that
+  installs it, so the CLI shape does not apply here.
+- **`monorepo.md`** — single plugin, single language, one deployable; there is
+  no workspace of independently versioned packages to coordinate.
+- **The live/integration and benchmark tiers from `ci.md`** — there is no
+  credentialed external service to exercise beyond the public GitHub releases
+  API (already covered by `asdf plugin test`), and shell glue is not
+  performance-sensitive, so no `bench.yml`.
+
 ## Architecture
 
 - `bin/` — the asdf plugin scripts. Each is an entry point asdf calls directly.
@@ -106,6 +137,35 @@ and selection logic in small pure functions in `lib/` so they can be unit-tested
 offline; cover every shared helper. Network-dependent behaviour is validated by
 `asdf plugin test`, not by the unit suite. New OS/architecture support must come
 with a mapping test, and changes to release parsing must update the fixtures.
+
+### End-to-end (e2e) decision
+
+The e2e tier is `just test-e2e`, which drives the plugin through asdf exactly as
+a user does: `asdf plugin add` (here via `asdf plugin test`, which clones the
+committed plugin tree), then a real `list-all` → `download` → `install` of an
+actual release, finishing with the `allowlister --version` smoke test of the
+installed binary. This *is* the plugin's bats/host-tool harness, so we treat it
+as the e2e and wire it into `just check` (and CI) rather than maintaining a
+second, parallel e2e suite — for an asdf plugin the host-tool install path is the
+end-to-end journey. It exercises both the happy path (a successful install) and
+failure handling (a failed smoke test removes the install directory; a missing
+asset aborts), so e2e is a deliberate, present tier, not a silent omission.
+
+### Coverage decision
+
+There is no line-coverage gate, and that is a deliberate decision, not an
+oversight. `bash.md` flags shell as the case most likely to justify dropping the
+coverage bar: the available tools (`kcov`, `bashcov`) instrument a running shell
+and are coarse, platform-fragile (`kcov` is effectively Linux-only and would
+not run on the macOS leg of the matrix), and they cannot see the code that
+matters most here — the `bin/` scripts only ever execute *inside* asdf, under
+asdf-provided env vars, which is precisely what `asdf plugin test` covers. Rather
+than chase a misleading percentage, coverage is enforced structurally: every
+shared `lib/` helper has direct bats unit tests (parsing, platform mapping, URL
+construction, checksum handling, install-path safety, latest-stable selection,
+token handling), and the end-to-end install path is proven by `asdf plugin test`
+on both Linux and macOS in CI. New `lib/` helpers must ship with their own tests;
+that — not a `--fail-under` number — is the coverage bar this repo enforces.
 
 ## Git state
 
