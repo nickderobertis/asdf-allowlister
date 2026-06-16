@@ -5,6 +5,28 @@ This repository is an [asdf](https://asdf-vm.com) plugin that installs the
 application source code: it is a set of shell scripts that asdf invokes, plus
 their tests and tooling.
 
+## Two standing goals on every task
+
+The user drives product features and their request is the priority — but carry
+two goals into *every* task. When either is the lowest-error path to what the
+user asked, fold it into the same task without asking first; surface the rest as
+follow-ups.
+
+1. **Engineer the context for next time.** Make the next agent (and you) see
+   more for less: realistic tests that exercise the real install path the way a
+   user does — especially when they report a bug existing tests missed (the
+   suite plus `asdf plugin test` is the only QA loop, see "Testing") — scripts
+   and recipes that automate repetitive steps and shrink their output to signal,
+   and terse `AGENTS.md` notes capturing what the code doesn't make obvious.
+2. **Engineer the codebase and environment.** Be the engineer the user isn't:
+   prioritize the technical initiatives that keep the codebase clean,
+   maintainable, and repeatable, and keep environment setup automated and
+   consistent (`just bootstrap` from a clean clone). Strict quality gates plus
+   local/CI parity — the same `just check` on the same pinned toolchain across
+   the Linux and macOS legs — make results repeatable, not "works on my
+   machine." A clean base and a reproducible environment are usually how the
+   user's feature ships with a low error rate.
+
 ## Stack and composition
 
 This repo was composed from the create-repo skill's reference pieces:
