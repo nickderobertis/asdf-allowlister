@@ -20,3 +20,8 @@ load test_helper
   [ "$stem.tar.gz" = "allowlister-v0.1.0-aarch64-unknown-linux-gnu.tar.gz" ]
   [ "$stem.sha256" = "allowlister-v0.1.0-aarch64-unknown-linux-gnu.sha256" ]
 }
+
+@test "asset_stem carries the musl triple for post-cutoff releases" {
+  run asset_stem 0.5.2 x86_64-unknown-linux-musl
+  [ "$output" = "allowlister-v0.5.2-x86_64-unknown-linux-musl" ]
+}
