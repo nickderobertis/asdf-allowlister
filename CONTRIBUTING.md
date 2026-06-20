@@ -88,6 +88,15 @@ shape):
    `test/urls.bats` to match.
 4. Run `just check`.
 
+If upstream changes the Linux libc its binaries link against, the target triple
+shifts (for example `*-unknown-linux-gnu` → `*-unknown-linux-musl`). Old
+releases keep only their original assets, so the flavour is selected per version
+rather than hardcoded: bump `MUSL_MIN_VERSION` in `lib/utils.bash` to the first
+release carrying the new assets and update the cutoff cases in
+`test/platform.bats`. Confirm the boundary against the actual published
+releases (the release at the cutoff must have the new assets, the one before it
+the old).
+
 ## Diagnostics: fail or stay silent
 
 Checks in the quality gate must fail the build or produce no output — never

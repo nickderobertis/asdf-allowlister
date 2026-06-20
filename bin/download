@@ -19,7 +19,7 @@ download_path=${ASDF_DOWNLOAD_PATH:?ASDF_DOWNLOAD_PATH is not set}
 [ "$install_type" = "version" ] ||
   fail "only 'version' installs are supported, got install type '$install_type'"
 
-triple=$(get_target_triple)
+triple=$(get_target_triple "$version")
 stem=$(asset_stem "$version" "$triple")
 tarball="${stem}.tar.gz"
 checksum="${stem}.sha256"

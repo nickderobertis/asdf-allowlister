@@ -18,6 +18,12 @@ upstream project and exposes the `allowlister` command as an asdf shim.
 Windows is **not supported**: asdf does not target it and the plugin installs
 only the Linux and macOS release artifacts.
 
+On Linux the plugin picks the release artifact's libc per version: releases
+before `0.5.2` are linked against glibc (`*-unknown-linux-gnu`), and `0.5.2` and
+later are statically linked against musl (`*-unknown-linux-musl`). This is
+automatic and needs no configuration; the static musl builds run on any
+distribution without a glibc-version dependency.
+
 ## Dependencies
 
 The plugin shells out to a small, explicit set of tools, all standard on a

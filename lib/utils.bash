@@ -126,17 +126,56 @@ sort_versions() {
   LC_ALL=C sort -t. -k1,1n -k2,2n -k3,3n
 }
 
-# Map a host (uname -s, uname -m) to allowlister's release target triple.
+# First allowlister release whose Linux assets are built against musl instead of
+# glibc. Releases before this carry only *-unknown-linux-gnu assets; this release
+# and every later one carry only *-unknown-linux-musl. The asset file name is the
+# whole reason the plugin tracks this: picking the wrong libc 404s the download,
+# so the Linux triple is selected per requested version rather than hardcoded.
+# macOS (*-apple-darwin) and Windows (*-pc-windows-msvc) names are unaffected.
+MUSL_MIN_VERSION="0.5.2"
+
+# Compare two strict MAJOR.MINOR.PATCH versions field by field. Returns 0 (true)
+# when <a> is greater than or equal to <b>, else 1. Pure: numeric per-field
+# compare, portable like sort_versions (no `sort -V`). A missing field is 0, so
+# an empty version sorts below every real one.
+version_ge() {
+  local -a a b
+  IFS=. read -r -a a <<<"$1"
+  IFS=. read -r -a b <<<"$2"
+  local i x y
+  for i in 0 1 2; do
+    x=${a[i]:-0}
+    y=${b[i]:-0}
+    [ "$x" -gt "$y" ] && return 0
+    [ "$x" -lt "$y" ] && return 1
+  done
+  return 0
+}
+
+# allowlister's Linux libc flavour for a given version: "musl" at or after
+# MUSL_MIN_VERSION, "gnu" before it. Pure (version in, string out).
+linux_libc_for_version() {
+  if version_ge "$1" "$MUSL_MIN_VERSION"; then
+    printf 'musl'
+  else
+    printf 'gnu'
+  fi
+}
+
+# Map a host (uname -s, uname -m) and a release version to allowlister's release
+# target triple.
 #
 # Kept pure (arguments in, string out, no `uname` call) so every supported and
 # unsupported combination is covered by unit tests. Upstream publishes:
-#   {x86_64,aarch64}-unknown-linux-gnu, {x86_64,aarch64}-apple-darwin,
+#   {x86_64,aarch64}-unknown-linux-{gnu,musl}, {x86_64,aarch64}-apple-darwin,
 #   x86_64-pc-windows-msvc.
-# Windows is not reachable through asdf and is intentionally unsupported.
+# The Linux libc flavour depends on the version (see linux_libc_for_version);
+# the version is ignored for macOS. Windows is not reachable through asdf and is
+# intentionally unsupported.
 target_triple_for() {
-  local kernel=$1 machine=$2 os arch
+  local kernel=$1 machine=$2 version=${3:-} os arch
   case "$kernel" in
-    Linux) os="unknown-linux-gnu" ;;
+    Linux) os="unknown-linux-$(linux_libc_for_version "$version")" ;;
     Darwin) os="apple-darwin" ;;
     *) fail "unsupported OS '${kernel}': allowlister ships binaries for Linux and macOS only" ;;
   esac
@@ -148,9 +187,9 @@ target_triple_for() {
   printf '%s-%s' "$arch" "$os"
 }
 
-# Target triple for the current host.
+# Target triple for the current host and the given release version.
 get_target_triple() {
-  target_triple_for "$(uname -s)" "$(uname -m)"
+  target_triple_for "$(uname -s)" "$(uname -m)" "$1"
 }
 
 # Common asset stem for a version/triple. The release asset embeds the tag with

@@ -117,9 +117,10 @@ clean:
 deps:
     asdf current
 
-# Inspection: target triple resolved for this host.
-debug-platform:
-    bash -c 'source lib/utils.bash && get_target_triple && echo'
+# Inspection: target triple resolved for this host at a given version. The
+# version sets the Linux libc flavour; defaults to the first musl release.
+debug-platform version='0.5.2':
+    bash -c 'source lib/utils.bash && get_target_triple {{ version }} && echo'
 
 # Inspection: installable versions as asdf sees them (hits the network).
 debug-versions:
